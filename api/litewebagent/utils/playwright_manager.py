@@ -99,21 +99,25 @@ class PlaywrightManager:
             # Usage example:
             await debug_browser_state(self.browser)
 
-            if reinitialization:
-                # Create new context with storage state if provided
-                context_options = {}
-                if self.storage_state:
-                    context_options["storage_state"] = self.storage_state
-                    print(f"Using storage state from: {self.storage_state}")
+            if self.storage_state:
+                if reinitialization:
+                    # Create new context with storage state if provided
+                    context_options = {}
+                    if self.storage_state:
+                        context_options["storage_state"] = self.storage_state
+                        print(f"Using storage state from: {self.storage_state}")
 
-                self.context = await self.browser.new_context(**context_options)
-                self.page = await self.context.new_page()
+                    self.context = await self.browser.new_context(**context_options)
+                    self.page = await self.context.new_page()
+                else:
+                    for context in self.browser.contexts:
+                        for page in context.pages:
+                            if page.url != "about:blank":
+                                self.context = context
+                                self.page = page
             else:
-                for context in self.browser.contexts:
-                    for page in context.pages:
-                        if page.url != "about:blank":
-                            self.context = context
-                            self.page = page
+                self.context = self.browser.contexts[0]
+                self.page = self.context.pages[0]
             
             await debug_browser_state(self.browser)
             
