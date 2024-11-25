@@ -1,4 +1,4 @@
-# Loggia Internal: LiteWebAgent
+# LiteWebAgent backend
 
 ## 1. QuickStart
 ```
@@ -77,49 +77,4 @@ curl -X POST 'http://0.0.0.0:8000/run-agent-followup-steps-stream' \
 }'
 
 curl -X POST "http://0.0.0.0:8000/terminate-browserbase?session_id=c2375f88-ac4f-4407-a441-00cbb6a37f6e"
-```
-
-## 3. authenticated
-```
-curl -X POST 'http://0.0.0.0:8000/start-browserbase' \
--H 'Content-Type: application/json' \
--d '{"storage_state_s3_path": "s3://loggia-tests/loggia-test/login/state.json"}'
-
-
-curl -X POST 'http://0.0.0.0:8000/connect-browserbase' \
--H 'Content-Type: application/json' \
--d '{
-    "session_id": "f5cf3536-d401-43ec-a615-50be131c3545",
-    "storage_state_s3_path": "s3://loggia-tests/loggia-test/login/state.json"
-}'
-
-curl -X POST 'http://0.0.0.0:8000/run-agent-initial-steps-stream' \
--H 'Content-Type: application/json' \
--d '{
-  "session_id": "a2919dbe-5283-4810-a48b-46e1fccc47e5",
-  "starting_url": "https://app.loggia.ai/",
-  "goal": "click on suite on the side bar",
-  "s3_path": "s3://loggia-tests/loggia-test/tests/2/flow.json",
-  "storage_state_s3_path": "s3://loggia-tests/loggia-test/login/state.json"
-}'
-
-curl -X POST "http://0.0.0.0:8000/terminate-browserbase?session_id=a2919dbe-5283-4810-a48b-46e1fccc47e5"
-```
-
-## 4. code conversion
-```
-curl -X POST https://loggia-webagent.vercel.app/convert-to-playwright \
--H "Content-Type: application/json" \
--d '{
-    "input_s3_path": "s3://loggia-tests/loggia-test/tests/2/flow.json",
-    "output_s3_path": "s3://loggia-tests/loggia-test/tests/2/python_code.py"
-}'
-
-
-curl -X POST  http://0.0.0.0:8000/convert-to-js-playwright \
--H "Content-Type: application/json" \
--d '{
-    "input_s3_path": "s3://loggia-tests/loggia-test/tests/2/flow.json",
-    "output_s3_path": "s3://loggia-tests/loggia-test/tests/2/js_code.js"
-}'
 ```
