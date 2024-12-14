@@ -111,7 +111,7 @@ async def run_agent_initial_steps(request: AgentRequest):
         model = "gpt-4o-mini"
         features = "axtree"
         log_folder = "log"
-        elements_filter=None
+        elements_filter="som"
 
         agent = await setup_function_calling_web_agent(
             request.starting_url,
@@ -151,7 +151,7 @@ async def run_agent_followup_steps(request: AgentFollowUpRequest):
         model = "gpt-4o-mini"
         features = "axtree"
         log_folder = "log"
-        elements_filter=None
+        elements_filter="som"
 
         agent = await setup_function_calling_web_agent(
             None,
@@ -215,7 +215,7 @@ async def run_agent_initial_steps_stream(request: AgentRequest):
             model = "gpt-4o-mini"
             features = "axtree"
             log_folder = "log"
-            elements_filter=None
+            elements_filter="som"
 
             agent = await setup_function_calling_web_agent(
                 request.starting_url,
@@ -265,7 +265,7 @@ async def run_agent_followup_steps_stream(request: AgentFollowUpRequest):
             model = "gpt-4o-mini"
             features = "axtree"
             log_folder = "log"
-            elements_filter=None
+            elements_filter="som"
 
             agent = await setup_function_calling_web_agent(
                 None,
