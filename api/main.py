@@ -1,3 +1,5 @@
+import asyncio
+import logging
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
@@ -179,74 +181,151 @@ async def terminate_browserbase(session_id: str):
         return {"status": "terminated"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+
+logger = logging.getLogger(__name__)
 
 class RealTimeEmitter:
     def __init__(self):
-        self.queue = Queue()
+        self._queue = asyncio.Queue()
+        self._is_closed = False
 
-    def emit(self, data: str):
-        self.queue.put(data)
+    async def emit(self, data: str):
+        if self._is_closed:
+            return
+            
+        if isinstance(data, (list, dict)):
+            data = json.dumps(data)
+        await self._queue.put(data)
 
-    async def get_emitter(self):
-        while True:
+    async def close(self):
+        self._is_closed = True
+        await self._queue.put(None)
+
+    async def __aiter__(self):
+        while not self._is_closed:
             try:
-                data = self.queue.get()
-                if data is None:  # End of stream signal
+                data = await self._queue.get()
+                if data is None:
                     break
+                    
+                # Yield each event individually and flush immediately
                 yield f"data: {data}\n\n"
-                self.queue.task_done()
-            except:
+                
+            except Exception as e:
+                logger.error(f"Streaming error: {e}")
                 break
+            finally:
+                self._queue.task_done()
 
 @app.post("/run-agent-initial-steps-stream")
 async def run_agent_initial_steps_stream(request: AgentRequest):
-    async def stream():
-        emitter = RealTimeEmitter()
+    emitter = RealTimeEmitter()
+    
+    async def stream_generator():
         try:
-            storage_state = download_storage_state(request.storage_state_s3_path)
-            print(storage_state)
-            playwright_manager = await setup_playwright(session_id=request.session_id, storage_state=storage_state)
-            live_browser_url = await playwright_manager.get_live_browser_url()
-            session_id = playwright_manager.get_session_id()
-
-            emitter.emit(f"Connected to browser. Live URL: {live_browser_url}")
-
-            agent_type = "FunctionCallingAgent"
-            model = "gpt-4o-mini"
-            features = "axtree"
-            log_folder = "log"
-            elements_filter="som"
-
-            agent = await setup_function_calling_web_agent(
-                request.starting_url,
-                request.goal,
-                playwright_manager=playwright_manager,
-                model_name=model,
-                agent_type=agent_type,
-                features=features,
-                tool_names=["navigation", "select_option", "upload_file"],
-                log_folder=log_folder,
-                s3_path=request.s3_path,
-                elements_filter=elements_filter
-            )
-
-            emitter.emit("Agent setup completed")
-
-            response = await agent.send_prompt(
-                request.plan if request.plan else request.goal,
-                emitter=emitter.emit
-            )
-            emitter.emit(f"Final Response: {response}")
-
+            # Start processing in a background task
+            process_task = asyncio.create_task(process_agent_steps(request, emitter))
+            
+            # Stream events as they come
+            async for event in emitter:
+                yield event
+                
+            # Wait for processing to complete
+            await process_task
+            
         except Exception as e:
-            emitter.emit(f"Error: {str(e)}")
+            logger.error(f"Stream error: {e}")
+            await emitter.emit({"type": "error", "message": str(e)})
         finally:
-            emitter.emit(None)
+            await emitter.close()
 
-        async for chunk in emitter.get_emitter():
-            yield chunk
+    # Set response headers for streaming
+    response = StreamingResponse(
+        stream_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no"  # Disable nginx buffering
+        }
+    )
+    
+    return response
 
-    return StreamingResponse(stream(), media_type="text/event-stream")
+def extract_choices(model_response):
+    return [
+        {
+            "finish_reason": choice.finish_reason,
+            "index": choice.index,
+            "message": {
+                "content": choice.message.content,
+                "role": choice.message.role,
+                "tool_calls": choice.message.tool_calls,
+                "function_call": choice.message.function_call
+            }
+        }
+        for choice in model_response.choices
+    ]
+
+async def process_agent_steps(request: AgentRequest, emitter: RealTimeEmitter):
+    try:
+        await emitter.emit({"type": "status", "message": "Starting setup..."})
+        
+        # Storage state setup
+        storage_state = download_storage_state(request.storage_state_s3_path)
+        await emitter.emit({"type": "status", "message": "Storage state loaded"})
+        
+        # Playwright setup
+        playwright_manager = await setup_playwright(
+            session_id=request.session_id,
+            storage_state=storage_state
+        )
+        live_browser_url = await playwright_manager.get_live_browser_url()
+        session_id = playwright_manager.get_session_id()
+        
+        await emitter.emit({
+            "type": "browser",
+            "message": f"Browser connected at {live_browser_url}"
+        })
+
+        # Agent setup
+        agent = await setup_function_calling_web_agent(
+            request.starting_url,
+            request.goal,
+            playwright_manager=playwright_manager,
+            model_name="gpt-4o-mini",
+            agent_type="FunctionCallingAgent",
+            features="axtree",
+            tool_names=["navigation", "select_option", "upload_file"],
+            log_folder="log",
+            s3_path=request.s3_path,
+            elements_filter="som"
+        )
+        
+        await emitter.emit({"type": "status", "message": "Agent setup complete"})
+
+        # Run the agent with real-time updates
+        async def real_time_emit(data):
+            await emitter.emit(data)
+            
+        response = await agent.send_prompt(
+            request.plan if request.plan else request.goal,
+            emitter=real_time_emit
+        )
+        
+        await emitter.emit({
+            "type": "complete",
+            "message": "Task completed",
+            "response": extract_choices(response)
+        })
+        
+    except Exception as e:
+        logger.error(f"Processing error: {e}")
+        await emitter.emit({
+            "type": "error",
+            "message": f"Error during processing: {str(e)}"
+        })
 
 # TODO: debug run-agent-followup-steps
 @app.post("/run-agent-followup-steps-stream")
