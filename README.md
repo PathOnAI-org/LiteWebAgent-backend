@@ -46,7 +46,7 @@ start browserbase session, retrieve live_browser_url for the frontend
 curl -X POST 'http://0.0.0.0:8000/start-browserbase' \
 -H 'Content-Type: application/json' \
 -d '{"storage_state_s3_path": null}'
-{"live_browser_url":"https://www.browserbase.com/devtools-fullscreen/inspector.html?wss=connect.browserbase.com/debug/365d0f97-e049-4b2c-b5f0-acdc13aac623/devtools/page/9339B1B48D7E43A1989E0C8EE0104DA9?debug=true","session_id":"365d0f97-e049-4b2c-b5f0-acdc13aac623","status":"started","storage_state_path":null}%    
+{"live_browser_url":"https://www.browserbase.com/devtools-fullscreen/inspector.html?wss=connect.browserbase.com/debug/f525ba67-c88e-4485-b207-dd9bf188729f/devtools/page/1467F73862C1EB9B7C68C41A4C654BD6?debug=true","session_id":"f525ba67-c88e-4485-b207-dd9bf188729f","status":"started","storage_state_path":null}%   
 ```
 
 
@@ -55,7 +55,7 @@ set goal, and some initial steps
 curl -X POST 'http://0.0.0.0:8000/run-agent-initial-steps-stream' \
 -H 'Content-Type: application/json' \
 -d '{
-  "session_id": "365d0f97-e049-4b2c-b5f0-acdc13aac623",
+  "session_id": "f525ba67-c88e-4485-b207-dd9bf188729f",
   "starting_url": "https://www.google.com",
   "goal": "type dining table in text box",
   "s3_path": "s3://loggia-tests/loggia-test/tests/2/flow.json",
@@ -76,20 +76,37 @@ add some follow-up steps
 curl -X POST 'http://0.0.0.0:8000/run-agent-followup-steps-stream' \
 -H 'Content-Type: application/json' \
 -d '{
-  "session_id": "365d0f97-e049-4b2c-b5f0-acdc13aac623",
+  "session_id": "f525ba67-c88e-4485-b207-dd9bf188729f",
   "goal": "click on search button",
   "s3_path": "s3://loggia-tests/loggia-test/tests/2/flow.json",
   "storage_state_s3_path": null
 }'
-data: Agent setup completed
 
-data: [{'tool_call_id': 'call_EMPttlrgylKzhYIll9amzzbC', 'role': 'tool', 'name': 'navigation', 'content': 'The action is: ```click(\'250\')``` - the result is: Based on the screenshot, the search has been performed successfully. Evidence of this includes:\n\n1. **Search Query**: The search bar at the top shows "dining table," indicating that a search has been executed.\n2. **Search Results**: Various products related to "dining table" are displayed below the search bar, which is a typical result of clicking a search button.\n3. **Contextual Filters**: Options like "Round," "Extendable," and "Black" suggest a filtering system often associated with search results.\n\nThese elements confirm that the goal of clicking the search button has been accomplished, as the application is now showing search results for the queried term.'}]
+data: {"type": "status", "message": "Starting setup..."}
 
-data: Final Response: ModelResponse(id='chatcmpl-AeU76pquQvI2HDoS2DlTrWfuFU8wN', choices=[Choices(finish_reason='stop', index=0, message=Message(content='The search button has been successfully clicked, and the search results for "dining table" are now displayed. Please provide further instructions if needed.', role='assistant', tool_calls=None, function_call=None))], created=1734212240, model='gpt-4o-mini-2024-07-18', object='chat.completion', system_fingerprint='fp_6fc10e10eb', usage=Usage(completion_tokens=30, prompt_tokens=588, total_tokens=618))
+data: {"type": "status", "message": "Storage state loaded"}
+
+data: {"type": "browser", "message": "Browser connected at https://www.browserbase.com/devtools-fullscreen/inspector.html?wss=connect.browserbase.com/debug/f525ba67-c88e-4485-b207-dd9bf188729f/devtools/page/1467F73862C1EB9B7C68C41A4C654BD6?debug=true"}
+
+data: {"type": "status", "message": "Agent setup complete"}
+
+data: {"type": "thinking", "message": "Processing next step..."}
+
+data: {"type": "tool_calls", "message": "Executing 1 actions..."}
+
+data: {"type": "tool_execution", "message": "Executing: navigation"}
+
+data: {"type": "tool_result", "message": {"tool_call_id": "call_UAJ8YtGfkMmIKE3QCZ5XgFnn", "role": "tool", "name": "navigation", "content": "The action is: ```fill('90', 'dining table')``` - the result is: Yes, the goal is finished. The screenshot shows that the text \"dining table\" has been typed into the Google search box, as evidenced by its presence in the text input field. This aligns with the original goal of typing \"dining table\" in the text box."}}
+
+data: {"type": "thinking", "message": "The task of typing \"dining table\" in the text box has been completed. Please provide further instructions if needed."}
+
+data: {"type": "action", "message": "No actions needed"}
+
+data: {"type": "complete", "message": "Task completed", "response": [{"finish_reason": "stop", "index": 0, "message": {"content": "The task of typing \"dining table\" in the text box has been completed. Please provide further instructions if needed.", "role": "assistant", "tool_calls": null, "function_call": null}}]}
 ```
 
 terminate the browserbase session, whole session completed
 ```
-curl -X POST "http://0.0.0.0:8000/terminate-browserbase?session_id=365d0f97-e049-4b2c-b5f0-acdc13aac623"
+curl -X POST "http://0.0.0.0:8000/terminate-browserbase?session_id=f525ba67-c88e-4485-b207-dd9bf188729f"
 {"status":"terminated"}%
 ```
