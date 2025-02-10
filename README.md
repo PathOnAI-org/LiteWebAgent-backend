@@ -1,4 +1,5 @@
 # LiteWebAgent backend
+Please note that this is a backend-only service. We have moved this backend to the monorepo: [LiteWebAgent](https://github.com/PathOnAI-org/LiteWebAgent) along with the frontend.
 
 ## 1. QuickStart
 ```
