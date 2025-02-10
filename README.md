@@ -61,26 +61,8 @@ curl -X POST 'http://0.0.0.0:8000/run-agent-initial-steps-stream' \
   "s3_path": "s3://loggia-tests/loggia-test/tests/2/flow.json",
   "storage_state_s3_path": null
 }'
-data: Connected to browser. Live URL: https://www.browserbase.com/devtools-fullscreen/inspector.html?wss=connect.browserbase.com/debug/365d0f97-e049-4b2c-b5f0-acdc13aac623/devtools/page/9339B1B48D7E43A1989E0C8EE0104DA9?debug=true
-
-data: Agent setup completed
-
-data: [{'tool_call_id': 'call_hY93qWEb3cPEHM74XNaHslWX', 'role': 'tool', 'name': 'navigation', 'content': 'The action is: ```fill(\'113\', \'dining table\')``` - the result is: Yes, the goal is finished. The text "dining table" is correctly typed into the search box, as shown in the screenshot. This matches the original goal of typing "dining table" into the text box.'}]
-
-data: Final Response: ModelResponse(id='chatcmpl-AeU5KgCTUnnbQYIpP3NLJmfjWCeCV', choices=[Choices(finish_reason='stop', index=0, message=Message(content='The task of typing "dining table" into the text box has been completed successfully. Please provide further instructions if needed.', role='assistant', tool_calls=None, function_call=None))], created=1734212130, model='gpt-4o-mini-2024-07-18', object='chat.completion', system_fingerprint='fp_6fc10e10eb', usage=Usage(completion_tokens=26, prompt_tokens=506, total_tokens=532))
-```
 
 
-add some follow-up steps
-```
-curl -X POST 'http://0.0.0.0:8000/run-agent-followup-steps-stream' \
--H 'Content-Type: application/json' \
--d '{
-  "session_id": "f525ba67-c88e-4485-b207-dd9bf188729f",
-  "goal": "click on search button",
-  "s3_path": "s3://loggia-tests/loggia-test/tests/2/flow.json",
-  "storage_state_s3_path": null
-}'
 
 data: {"type": "status", "message": "Starting setup..."}
 
@@ -104,6 +86,19 @@ data: {"type": "action", "message": "No actions needed"}
 
 data: {"type": "complete", "message": "Task completed", "response": [{"finish_reason": "stop", "index": 0, "message": {"content": "The task of typing \"dining table\" in the text box has been completed. Please provide further instructions if needed.", "role": "assistant", "tool_calls": null, "function_call": null}}]}
 ```
+
+add some follow-up steps
+```
+curl -X POST 'http://0.0.0.0:8000/run-agent-followup-steps-stream' \
+-H 'Content-Type: application/json' \
+-d '{
+  "session_id": "f525ba67-c88e-4485-b207-dd9bf188729f",
+  "goal": "click on search button",
+  "s3_path": "s3://loggia-tests/loggia-test/tests/2/flow.json",
+  "storage_state_s3_path": null
+}'
+```
+
 
 terminate the browserbase session, whole session completed
 ```

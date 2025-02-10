@@ -227,12 +227,21 @@ async def run_agent_initial_steps_stream(request: AgentRequest):
             # Start processing in a background task
             process_task = asyncio.create_task(process_agent_steps(request, emitter))
             
-            # Stream events as they come
+            # Stream events as they are emitted
             async for event in emitter:
                 yield event
+
+            # Check if task raised any exceptions
+            if process_task.done() and process_task.exception():
+                raise process_task.exception()
                 
-            # Wait for processing to complete
-            await process_task
+            # Cancel task if it's still running
+            if not process_task.done():
+                process_task.cancel()
+                try:
+                    await process_task
+                except asyncio.CancelledError:
+                    pass
             
         except Exception as e:
             logger.error(f"Stream error: {e}")
@@ -326,6 +335,8 @@ async def process_agent_steps(request: AgentRequest, emitter: RealTimeEmitter):
             "type": "error",
             "message": f"Error during processing: {str(e)}"
         })
+    finally:
+        await emitter.close()  # Ensure emitter is closed after processing
 
 # TODO: debug run-agent-followup-steps
 @app.post("/run-agent-followup-steps-stream")
