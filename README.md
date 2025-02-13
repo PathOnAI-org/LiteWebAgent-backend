@@ -59,7 +59,7 @@ curl -X POST 'http://0.0.0.0:8000/run-agent-initial-steps-stream' \
   "session_id": "f525ba67-c88e-4485-b207-dd9bf188729f",
   "starting_url": "https://www.google.com",
   "goal": "type dining table in text box",
-  "s3_path": "s3://loggia-tests/loggia-test/tests/2/flow.json",
+  "s3_path": "s3://test-litewebagent/adhoc-test/flow.json",
   "storage_state_s3_path": null
 }'
 
@@ -95,7 +95,7 @@ curl -X POST 'http://0.0.0.0:8000/run-agent-followup-steps-stream' \
 -d '{
   "session_id": "f525ba67-c88e-4485-b207-dd9bf188729f",
   "goal": "click on search button",
-  "s3_path": "s3://loggia-tests/loggia-test/tests/2/flow.json",
+  "s3_path": "s3://test-litewebagent/adhoc-test/flow.json",
   "storage_state_s3_path": null
 }'
 ```
@@ -123,7 +123,7 @@ curl -X POST 'https://lite-web-agent-backend.vercel.app/run-agent-initial-steps-
   "session_id": "3744d2f6-4ba5-4d98-a44c-5b03fc7b33a3",
   "starting_url": "https://www.google.com",
   "goal": "type dining table in text box",
-  "s3_path": "s3://loggia-tests/loggia-test/tests/2/flow.json",
+  "s3_path": "s3://test-litewebagent/adhoc-test/flow.json",
   "storage_state_s3_path": null
 }'
 ```
